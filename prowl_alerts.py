@@ -6,7 +6,7 @@ import octoprint.plugin
 from octoprint.events import eventManager, Events
 import logging
 import logging.handlers
-
+import os
 from time import sleep
 import re
 from pyrowl import notify as prowl
@@ -33,7 +33,7 @@ def display_time(seconds, granularity=2):
 			seconds -= value * count
 			if value == 1:
 				name = name.rstrip('s')
-			result.append("{} {}".format(value, name))
+			result.append("{} {}".format(int(value), name))
 	return ' and '.join(result[:granularity])
 
 
@@ -45,11 +45,11 @@ class ProwlPlugin(octoprint.plugin.EventHandlerPlugin, octoprint.plugin.Settings
 	
 	def on_event(self, event, payload):		
 		if event == Events.PRINT_DONE:
-			message="Printed '{0}' in {1}... ".format( payload.get("file"), display_time(payload.get("time")) )
+			message="Printed '{0}' in {1}... ".format( os.path.basename(payload.get("file")), display_time(payload.get("time")) )
 			title = "Print Done"
 			self.send_prowl(title, message)
 		elif event == Events.PRINT_FAILED:			
-			message="{0} failed to print.".format( payload.get("file") )
+			message="{0} failed to print.".format( os.path.basename(payload.get("file")) )
 			title = "Print Failed"
 			self.send_prowl(title, message)
 		elif event == Events.MOVIE_DONE:
