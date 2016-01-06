@@ -45,11 +45,11 @@ class ProwlPlugin(octoprint.plugin.EventHandlerPlugin, octoprint.plugin.Settings
 	
 	def on_event(self, event, payload):		
 		if event == Events.PRINT_DONE:
-			message="Printed '{0}' in {1}... ".format( payload.get("filename"), display_time(payload.get("time")) )
+			message="Printed '{0}' in {1}... ".format( payload.get("file"), display_time(payload.get("time")) )
 			title = "Print Done"
 			self.send_prowl(title, message)
 		elif event == Events.PRINT_FAILED:			
-			message="{0} failed to print.".format( payload.get("filename") )
+			message="{0} failed to print.".format( payload.get("file") )
 			title = "Print Failed"
 			self.send_prowl(title, message)
 		elif event == Events.MOVIE_DONE:
@@ -75,10 +75,10 @@ class ProwlPlugin(octoprint.plugin.EventHandlerPlugin, octoprint.plugin.Settings
 
 	def testme(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
 		if gcode == "G888":
-			payload = {'origin': 'local', 'time': 1391.564973115921, 'file': u'/home/pi/.octoprint/uploads/m4-nuts.gcode', 'filename': u'm4-nuts.gcode'}
+			payload = {'origin': 'local', 'time': 1391.564973115921, 'file': u'm4-nuts.gcode'}
 			eventManager().fire(Events.PRINT_DONE, payload)
 			sleep(2)
-			payload = {'origin': 'local', 'file': u'/home/pi/.octoprint/uploads/m4-nuts.gcode', 'filename': u'm4-nuts.gcode'}
+			payload = {'origin': 'local', 'file': u'm4-nuts.gcode'}
 			eventManager().fire(Events.PRINT_FAILED, payload)
 			sleep(2)
 			payload = {'gcode': u'm4-nuts.gcode', 'movie_basename': u'm4-nuts_20151215110007.mpg', 'movie': u'/home/pi/.octoprint/timelapse/m4-nuts_20151215110007.mpg'}
