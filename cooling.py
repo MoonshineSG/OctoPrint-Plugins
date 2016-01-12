@@ -61,7 +61,7 @@ class CoolingThread (Thread):
 
 class CoolingPlugin(octoprint.plugin.EventHandlerPlugin):
 
-	regex =  re.compile(ur'(W(\d*))', re.IGNORECASE)
+	regex =  re.compile(ur'(C(\d*))', re.IGNORECASE)
 	
 	def initialize(self):
 		#self._logger.setLevel(logging.DEBUG)
@@ -76,10 +76,10 @@ class CoolingPlugin(octoprint.plugin.EventHandlerPlugin):
 	
 	def start_cooler(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
 		if gcode and gcode == "M140":
-			self._logger.debug("receiver 140... %s"%cmd)
+			self._logger.debug("received 140... %s"%cmd)
 			found = re.search(self.regex, cmd)			
 			if found:
-				self._logger.debug("W parameter... %s"%found.group(2) )
+				self._logger.debug("'C' parameter... %s"%found.group(2) )
 				value = float( found.group(2) )
 				t = value
 				if value < 35.0:
