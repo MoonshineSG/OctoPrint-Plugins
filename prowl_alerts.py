@@ -42,24 +42,34 @@ class ProwlPlugin(octoprint.plugin.EventHandlerPlugin, octoprint.plugin.Settings
 	def initialize(self):
 		#self._logger.setLevel(logging.DEBUG)
 		self._logger.debug("ProwlPlugin initialized...")
+		self.canceled = False
 	
 	def on_event(self, event, payload):		
+		if event == Events.PRINT_STARTED:
+			self.canceled = False
 		if event == Events.PRINT_DONE:
 			message="Printed '{0}' in {1}... ".format( os.path.basename(payload.get("file")), display_time(payload.get("time")) )
 			title = "Print Done"
 			self.send_prowl(title, message)
-		elif event == Events.PRINT_FAILED:			
-			message="{0} failed to print.".format( os.path.basename(payload.get("file")) )
-			title = "Print Failed"
-			self.send_prowl(title, message)
+		elif event == Events.PRINT_CANCELLED:
+			self.canceled = True
+		elif event == Events.PRINT_FAILED:
+			if not self.canceled:
+				message="{0} failed to print.".format( os.path.basename(payload.get("file")) )
+				title = "Print Failed"
+				self.send_prowl(title, message)
 		elif event == Events.MOVIE_DONE:
-			message = "Created {0}/downloads/timelapse/{1}".format(self._settings.get(["url"]), payload.get("movie_basename"))
-			title = "Timelapse Movie"
-			self.send_prowl(title, message)
+			if self.canceled:
+				os.remove(payload.get("movie"))
+			else:
+				message = "Created {0}/downloads/timelapse/{1}".format(self._settings.get(["url"]), payload.get("movie_basename"))
+				title = "Timelapse Movie"
+				self.send_prowl(title, message)
 		elif event == Events.MOVIE_FAILED:
-			message = "Failed to create movie for '{0}'...".format(payload.get("gcode"))
-			title = "Timelapse Movie"
-			self.send_prowl(title, message)
+			if not self.canceled:
+				message = "Failed to create movie for '{0}'...".format(payload.get("gcode"))
+				title = "Timelapse Movie"
+				self.send_prowl(title, message)
 		
 			
 	def send_prowl(self, title, message):
@@ -69,7 +79,7 @@ class ProwlPlugin(octoprint.plugin.EventHandlerPlugin, octoprint.plugin.Settings
 
 	def get_settings_defaults(self):
 		return dict(
-			name = "Octoprint",
+			name = "OctoPrint",
 			url  = "vlc://octoprint.local"
 		)
 
