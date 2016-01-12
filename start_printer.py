@@ -21,7 +21,6 @@ class PowerUpPlugin(octoprint.plugin.OctoPrintPlugin):
 			if found:
 				value = float( found.group(1) )
 				if value > 0:
-					comm_instance._log("Powering up printer...")
 					eventManager().fire(Events.POWER_ON)
 
 
