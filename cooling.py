@@ -14,8 +14,8 @@ import atexit
 import random, string
 
 __plugin_name__ = "Cooling off"
-__plugin_version__ = "0.0.2"
-__plugin_description__ = "Wait for the bed temperature to reach a value set by W parameter of M140 (M140 W0) then play a sound."
+__plugin_version__ = "0.0.3"
+__plugin_description__ = "Wait for the bed temperature to reach a value set by W parameter of M140 (M140 W35) then play a sound."
 
 
 class CoolingThread (Thread):
@@ -31,11 +31,11 @@ class CoolingThread (Thread):
 		self._logger.debug("CoolingThread-{0} initialized".format(self._id) )
 
 	def exit(self):
-		self._logger.info("CoolingThread-{0} stop".format(self._id))
+		self._logger.debug("CoolingThread-{0} stop".format(self._id))
 		self.running = False
 		
 	def run(self):		
-		self._logger.info("CoolingThread-{0} run...".format(self._id))
+		self._logger.debug("CoolingThread-{0} run...".format(self._id))
 		while self.running:
 			temperatures = self._printer.get_current_temperatures()
 			self._logger.debug(temperatures)
@@ -50,18 +50,18 @@ class CoolingThread (Thread):
 						eventManager().fire(Events.POWER_OFF)
 						self.running = False
 					else:
-						self._logger.info("{0}: printer bed is still hot...".format(self._id))
+						self._logger.debug("{0}: printer bed is still hot...".format(self._id))
 						sleep(5)
 			else:
 				self._logger.debug("{0}: no temp yet...".format(self._id))
 				sleep(5)
-		self._logger.info("CoolingThread-{0} ended...".format(self._id))
+		self._logger.debug("CoolingThread-{0} ended...".format(self._id))
 	
 		
 
 class CoolingPlugin(octoprint.plugin.EventHandlerPlugin):
 
-	regex =  re.compile(ur'(C(\d*))', re.IGNORECASE)
+	regex =  re.compile(ur'(W(\d*))', re.IGNORECASE)
 	
 	def initialize(self):
 		#self._logger.setLevel(logging.DEBUG)
@@ -79,10 +79,10 @@ class CoolingPlugin(octoprint.plugin.EventHandlerPlugin):
 			self._logger.debug("received 140... %s"%cmd)
 			found = re.search(self.regex, cmd)			
 			if found:
-				self._logger.debug("'C' parameter... %s"%found.group(2) )
+				self._logger.debug("'W' parameter... %s"%found.group(2) )
 				value = float( found.group(2) )
 				t = value
-				if value < 35.0:
+				if value < 35.0: #will never cool below ambient temperature
 					t = 35.0
 
 				temperatures = self._printer.get_current_temperatures()
