@@ -29,10 +29,6 @@ class GcodeActionPlugin(octoprint.plugin.OctoPrintPlugin):
 		elif action == "serial_log_off":
 			self.change_serial_log(False)
 			
-		elif action == "snapshot":
-			eventManager().fire(Events.SNAPSHOT)
-
-
 	def change_serial_log(self, status):
 		s = settings()
 		oldLog = s.getBoolean(["serial", "log"])
@@ -58,7 +54,7 @@ class GcodeActionPlugin(octoprint.plugin.OctoPrintPlugin):
 
 def __plugin_load__():
 	global __plugin_implementation__
-	__plugin_implementation__ = GcodeAction()
+	__plugin_implementation__ = GcodeActionPlugin()
 
 	global __plugin_hooks__
 	__plugin_hooks__ = {"octoprint.comm.protocol.action": __plugin_implementation__.custom_action_handler}
