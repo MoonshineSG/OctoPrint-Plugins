@@ -50,7 +50,7 @@ class LogZChangePlugin(octoprint.plugin.StartupPlugin, octoprint.plugin.Settings
 			
 	def custom_action_handler(self, comm, line, action, *args, **kwargs):
 		if action[:7] == "zchange":
-			self._console_logger.info("Z %s"%action[8:])
+			self._console_logger.info(action[8:])
 			
 def __plugin_load__():
 	global __plugin_implementation__

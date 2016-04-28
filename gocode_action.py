@@ -28,6 +28,12 @@ class GcodeActionPlugin(octoprint.plugin.OctoPrintPlugin):
 			
 		elif action == "serial_log_off":
 			self.change_serial_log(False)
+
+		elif action == "baby_up":
+			self._printer.commands("M300 @baby_up")
+
+		elif action == "baby_down":
+			self._printer.commands("M300 @baby_down")
 			
 	def change_serial_log(self, status):
 		s = settings()
