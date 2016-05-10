@@ -47,10 +47,6 @@ class ProwlPlugin(octoprint.plugin.EventHandlerPlugin, octoprint.plugin.Settings
 	def on_event(self, event, payload):		
 		if event == Events.PRINT_STARTED:
 			self.canceled = False
-		if event == Events.PRINT_DONE:
-			message="Printed '{0}' in {1}... ".format( os.path.basename(payload.get("file")), display_time(payload.get("time")) )
-			title = "Print Done"
-			self.send_prowl(title, message)
 		elif event == Events.PRINT_CANCELLED:
 			self.canceled = True
 		elif event == Events.PRINT_FAILED:
