@@ -34,6 +34,11 @@ class GcodeActionPlugin(octoprint.plugin.OctoPrintPlugin):
 
 		elif action == "baby_down":
 			self._printer.commands("M300 @baby_down")
+
+		elif action == "cooled":
+			self._logger.info("printer has cooled off...")
+			self._printer.commands("M300 @cooled")
+			eventManager().fire(Events.POWER_OFF)
 			
 	def change_serial_log(self, status):
 		s = settings()
