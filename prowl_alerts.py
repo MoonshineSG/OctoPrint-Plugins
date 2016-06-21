@@ -9,7 +9,7 @@ import logging.handlers
 import os
 from time import sleep
 import re
-from pyrowl import notify as prowl
+import pyrowl
 
 
 __plugin_name__ = "Prowl alerts"
@@ -69,14 +69,26 @@ class ProwlPlugin(octoprint.plugin.EventHandlerPlugin, octoprint.plugin.Settings
 		
 			
 	def send_prowl(self, title, message):
+		prowl_key = self._settings.get(["prowl_key"])
 		self._logger.info("Sending message '{0}':'{1}'".format(title, message))
-		prowl(self._settings.get(["name"]), title , message)
-
+		if prowl_key:
+			try:
+				service = pyrowl.Pyrowl(prowl_key)
+				res = service.push("Octoprint Mobile", title, message).get(prowl_key)
+				if res.get('code') == '200':
+					self._logger.info( "Notification sent. %s remaining."%res.get('remaining') )
+				else:
+					self._logger.error( res.get('message') )
+			except Exception as e:
+				self._logger.error("Prowl notification failed. [%s]"%e)
+		else:
+			self._logger.info("Prowl not yet setup. Add your prowl_key in the config file.")	
 
 	def get_settings_defaults(self):
 		return dict(
 			name = "OctoPrint",
-			url  = "vlc://octoprint.local"
+			url  = "vlc://octoprint.local",
+			prowl_key = None
 		)
 
 	def testme(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):

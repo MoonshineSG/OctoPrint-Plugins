@@ -17,10 +17,15 @@ Change settings by manually editing `config.yaml` under "plugins"
   prowl_alerts:
     name: 
     url: 
+    prowl_key: 
+	
 
 ```
 - name: the alert sender (default: Octoprint)
 - url: link to the server for downloading timelapse movies (default: vlc://octoprint.local) 
+
+Pyhton libs: https://github.com/babs/pyrowl/tree/master
+Application: https://www.prowlapp.com/
 
 ####start_printer
 Make sure power is on when starting the heaters
