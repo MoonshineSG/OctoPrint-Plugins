@@ -16,7 +16,7 @@ class PowerUpPlugin(octoprint.plugin.OctoPrintPlugin):
 	regex = re.compile(ur'S(\d*)', re.IGNORECASE)
 	
 	def turn_on_printer(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
-		if gcode in ["M104", "M109", "M140", "M190"]:
+		if gcode in ["M104", "M109", "M140", "M190", "M303"]:
 			found = re.search(self.regex, cmd)
 			if found:
 				value = float( found.group(1) )

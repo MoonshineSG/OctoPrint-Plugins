@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 import octoprint.plugin
 import re
+import os
 import logging
 
 from octoprint.events import eventManager, Events
@@ -18,11 +19,11 @@ class GcodeActionPlugin(octoprint.plugin.OctoPrintPlugin):
 	regex = re.compile(ur'S(\d*)', re.IGNORECASE)
 	
 	def initialize(self):
-		#self._logger.setLevel(logging.DEBUG)
+		##self._logger.setLevel(logging.DEBUG)
 		pass
 	
 	def custom_action_handler(self, comm, line, action, *args, **kwargs):
-		#self._logger.debug(action)
+		self._logger.debug(action)
 		if action == "serial_log_on":
 			self.change_serial_log(True)
 			
@@ -39,6 +40,12 @@ class GcodeActionPlugin(octoprint.plugin.OctoPrintPlugin):
 			self._logger.info("printer has cooled off...")
 			self._printer.commands("M300 @cooled")
 			eventManager().fire(Events.POWER_OFF)
+
+		elif action.startswith("firmware"):
+			acti, extruders, nozzles = action.split(" ")
+			self._logger.info("writing firmware info [%s extruder(s), %s nozzle(s)] ..."%(extruders, nozzles))
+			with open("/home/pi/.marlin", 'w+') as f:
+				f.write("|".join([extruders, nozzles]))
 			
 	def change_serial_log(self, status):
 		s = settings()
