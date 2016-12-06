@@ -20,7 +20,7 @@ class ReplaceKeywords(octoprint.filemanager.util.LineProcessorStream):
 		if os.path.isfile(code_file):
 			with open(code_file) as foo:
 				return foo.read()
-			
+		return "M117 No valid PID found for '%s'. Using default."%line
 		
 	def process_line(self, line):
 		prev_line = self.saved_line
