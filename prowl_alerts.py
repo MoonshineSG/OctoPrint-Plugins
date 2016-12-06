@@ -56,9 +56,10 @@ class ProwlPlugin(octoprint.plugin.EventHandlerPlugin, octoprint.plugin.Settings
 			if self.canceled:
 				os.remove(payload.get("movie"))
 			else:
-				message = "Created {0}/downloads/timelapse/{1}".format(self._settings.get(["url"]), payload.get("movie_basename"))
+				message = "Now available."
 				title = "Timelapse Movie"
-				self.send_prowl(title, message)
+				link = "{0}/downloads/timelapse/{1}".format(self._settings.get(["url"]), payload.get("movie_basename"))
+				self.send_prowl(title, message, link)
 		elif event == Events.MOVIE_FAILED:
 			if not self.canceled:
 				message = "Failed to create movie for '{0}'...".format(payload.get("gcode"))
@@ -66,13 +67,13 @@ class ProwlPlugin(octoprint.plugin.EventHandlerPlugin, octoprint.plugin.Settings
 				self.send_prowl(title, message)
 		
 			
-	def send_prowl(self, title, message):
+	def send_prowl(self, title, message, link = None):
 		prowl_key = self._settings.get(["prowl_key"])
-		self._logger.info("Sending message '{0}':'{1}'".format(title, message))
+		self._logger.info("Sending message '{0}':'{1}' [link:{2}]".format(title, message, link))
 		if prowl_key:
 			try:
 				service = Pyrowl(prowl_key)
-				res = service.push("Octoprint Mobile", title, message).get(prowl_key)
+				res = service.push("Octoprint Mobile", title, message, link).get(prowl_key)
 				if res.get('code') == '200':
 					self._logger.info( "Notification sent. %s remaining."%res.get('remaining') )
 				else:
