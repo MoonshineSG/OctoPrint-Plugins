@@ -48,7 +48,7 @@ class ReplaceKeywords(octoprint.filemanager.util.LineProcessorStream):
 
 		elif line.startswith("; SET_PID"):
 			if self.single_nozzle:
-				return self.get_gcode("set_pid_single_nozzle")
+				return self.get_gcode("set_pid_cyclops")
 			elif self.volcano:
 				return self.get_gcode("set_pid_volcano")
 			else:
