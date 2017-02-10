@@ -39,7 +39,7 @@ class GcodeActionPlugin(octoprint.plugin.OctoPrintPlugin):
 		elif action == "cooled":
 			self._logger.info("printer has cooled off...")
 			self._printer.commands("M300 @cooled")
-			eventManager().fire(Events.POWER_OFF)
+			eventManager().fire(Events.POWER_IDLE)
 
 		elif action.startswith("firmware"):
 			acti, extruders, nozzles = action.split(" ")
@@ -71,6 +71,9 @@ class GcodeActionPlugin(octoprint.plugin.OctoPrintPlugin):
 		
 
 def __plugin_load__():
+	#patch Events with our own declaration
+	Events.POWER_IDLE = "PowerIdle"
+
 	global __plugin_implementation__
 	__plugin_implementation__ = GcodeActionPlugin()
 

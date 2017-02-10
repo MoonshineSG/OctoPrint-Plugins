@@ -12,9 +12,10 @@ class ReplaceKeywords(octoprint.filemanager.util.LineProcessorStream):
 	accelerated = False
 	volcano = False
 	pva = False
+	primary = 0
 	
-	saved_line = ""
-	
+	DEFAULT_ACCELERATION = 950
+		
 	def get_gcode(self, line):
 		code_file = os.path.join("/home/pi/.octoprint/scripts/gcode/preprocessor", "%s.gcode"%line)
 		if os.path.isfile(code_file):
@@ -23,9 +24,6 @@ class ReplaceKeywords(octoprint.filemanager.util.LineProcessorStream):
 		return "M117 No valid PID found for '%s'. Using default."%line
 		
 	def process_line(self, line):
-		prev_line = self.saved_line
-		self.saved_line = line
-		
 		if line.startswith(";   printExtruders"):
 			self.dual_extruder = "single" not in line
 			self.single_nozzle = "cyclops" in line
@@ -36,6 +34,13 @@ class ReplaceKeywords(octoprint.filemanager.util.LineProcessorStream):
 
 		elif line.startswith("; ACCELERATED"):
 			self.accelerated = True
+			#return "; ACCELERATED\nM204 P%s\n"%self.DEFAULT_ACCELERATION
+
+		elif line.startswith(";   primaryExtruder"):
+			self.primary = line.split(",")[1]
+
+		elif line.startswith("; PRIMARY"):
+				return "; PRIMARY\nT%s\n"%self.primary
 
 		elif line.startswith("T0"):
 			if self.pva:
@@ -54,28 +59,33 @@ class ReplaceKeywords(octoprint.filemanager.util.LineProcessorStream):
 			else:
 				return self.get_gcode("set_pid")
 
-		elif line.startswith("; SET_TEMPERATURES"): #;SET_TEMPERATURES 60 195 0
+		elif line.startswith("; SET_TEMPERATURES"): #; SET_TEMPERATURES 60 195 0
+			a,b, tb,t1,t2 = line.split()
 			newline = """
 ; SET_TEMPERATURES
-G1 X100 Y100 Z10  F10000   ; move to middle
-
+"""
+			if int(tb):
+				newline = """%s
 M190 S%s	; wait for bed temp
 M300 @temperature_bed		; beep
+"""%(newline, tb)
 
+			if int(t1):
+				newline = """%s
 M109 T0 S%s 	; wait for left extruder temp
 M300 @temperature_extruder	; beep
 
-"""%(line.split()[2], line.split()[3])
-			
-			if self.dual_extruder:
+"""%(newline, t1)
+
+			if int(t2):
 				newline = """%s
 M109 T1 S%s	; wait for right extruder temp
 M300 @temperature_extruder	; beep
 
-"""%(newline, line.split()[4])
+"""%(newline, t2)
 			return newline
 
-		elif line.startswith("; PRIME_NOZZLE"):
+		elif line.startswith("; PURGE"):
 			if self.dual_extruder or self.single_nozzle:
 				newline = """
 ; PRIME_NOZZLE DUAL
@@ -112,15 +122,9 @@ G1 E15 F500
 G4 P1500
 
 ;whipe
-G1 Y10 F8000
 G1 Z0 F3000
-G1 X10 F8000
-G1 Z1 F3000
-
-;retract
-G1 E-5 F3000
-T0
-G1 E-5 F3000
+G1 X60 Y10 F8000
+G1 Z2 F3000
 
 """
 			else:
@@ -143,13 +147,9 @@ G1 E15 F500
 G4 P1500
 
 ;whipe
-G1 Y10 F8000
 G1 Z0 F3000
-G1 X10 F8000
-G1 Z1 F3000
-
-;retract
-G1 E-5 F3000
+G1 X10 Y10 F8000
+G1 Z2 F3000
 """
 
 			return newline
@@ -168,19 +168,19 @@ G92 E0
 				newline = "; SET_E0 SINGLE\nG92 E0\n"
 			return newline
 		elif line.startswith("; outer perimeter") and self.accelerated:
-			return "\n; outer perimeter\nM204 P250\n\n"
+			return "\n; outer perimeter\nM204 P600\n\n"
 			
 		elif line.startswith("; inner perimeter") and self.accelerated:
-			return "\n; inner perimeter\nM204 P250\n\n"
+			return "\n; inner perimeter\nM204 P800\n\n"
 
 		elif line.startswith("; solid layer") and self.accelerated:
-			return "\n; solid layer\nM204 P600\n\n"
+			return "\n; solid layer\nM204 P950\n\n"
 
 		elif line.startswith("; ooze shield") and self.accelerated:
 			return "\n; ooze shield\nM204 P1200\n\n"
 		
 		elif line.startswith("; infill") and self.accelerated:
-			return "\n; infill\nM204 P800\n\n"
+			return "\n; infill\nM204 P1000\n\n"
 
 		elif line.startswith("; bridge") and self.accelerated:
 			return "\n; bridge\nM204 P1200\n\n"

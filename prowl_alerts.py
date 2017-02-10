@@ -8,7 +8,8 @@ import logging
 import logging.handlers
 import os
 from time import sleep
-import re
+import re, time
+
 
 __plugin_name__ = "Prowl alerts"
 __plugin_version__ = "0.0.1"
@@ -40,32 +41,15 @@ class ProwlPlugin(octoprint.plugin.EventHandlerPlugin, octoprint.plugin.Settings
 	def initialize(self):
 		#self._logger.setLevel(logging.DEBUG)
 		self._logger.debug("ProwlPlugin initialized...")
-		self.canceled = False
 	
 	def on_event(self, event, payload):		
 		if event == Events.PRINT_STARTED:
-			self.canceled = False
-		elif event == Events.PRINT_CANCELLED:
-			self.canceled = True
-		elif event == Events.PRINT_FAILED:
-			if not self.canceled:
-				message="{0} failed to print.".format( os.path.basename(payload.get("file")) )
-				title = "Print Failed"
-				self.send_prowl(title, message)
-		elif event == Events.MOVIE_DONE:
-			if self.canceled:
-				os.remove(payload.get("movie"))
-			else:
-				message = "Now available."
-				title = "Timelapse Movie"
-				link = "{0}/downloads/timelapse/{1}".format(self._settings.get(["url"]), payload.get("movie_basename"))
-				self.send_prowl(title, message, link)
-		elif event == Events.MOVIE_FAILED:
-			if not self.canceled:
-				message = "Failed to create movie for '{0}'...".format(payload.get("gcode"))
-				title = "Timelapse Movie"
-				self.send_prowl(title, message)
-		
+			self.started = time.strftime("%Y%m%d%H%M%S")
+		elif event == Events.PRINT_DONE:
+			title = "Print Done"
+			message="'{0}' printed in {1}. Timelapse will be available shortly.".format( payload.get("name"), display_time(payload.get("time")) )
+			link =  "{0}/{1}_{2}.mpg".format(self._settings.get(["movie_link"]).strip("/"), os.path.splitext(payload.get("name"))[0], self.started )
+			self.send_prowl(title, message, link)
 			
 	def send_prowl(self, title, message, link = None):
 		prowl_key = self._settings.get(["prowl_key"])
@@ -73,7 +57,7 @@ class ProwlPlugin(octoprint.plugin.EventHandlerPlugin, octoprint.plugin.Settings
 		if prowl_key:
 			try:
 				service = Pyrowl(prowl_key)
-				res = service.push("Octoprint Mobile", title, message, link).get(prowl_key)
+				res = service.push(self._settings.get(["name"]), title, message, link).get(prowl_key)
 				if res.get('code') == '200':
 					self._logger.info( "Notification sent. %s remaining."%res.get('remaining') )
 				else:
@@ -86,26 +70,9 @@ class ProwlPlugin(octoprint.plugin.EventHandlerPlugin, octoprint.plugin.Settings
 	def get_settings_defaults(self):
 		return dict(
 			name = "OctoPrint",
-			url  = "vlc://octoprint.local",
+			movie_link  = "vlc://octoprint.local",
 			prowl_key = None
-		)
-
-	def testme(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
-		if gcode == "G888":
-			payload = {'origin': 'local', 'time': 1391.564973115921, 'file': u'm4-nuts.gcode'}
-			eventManager().fire(Events.PRINT_DONE, payload)
-			sleep(2)
-			payload = {'origin': 'local', 'file': u'm4-nuts.gcode'}
-			eventManager().fire(Events.PRINT_FAILED, payload)
-			sleep(2)
-			payload = {'gcode': u'm4-nuts.gcode', 'movie_basename': u'm4-nuts_20151215110007.mpg', 'movie': u'/home/pi/.octoprint/timelapse/m4-nuts_20151215110007.mpg'}
-			eventManager().fire(Events.MOVIE_DONE, payload)
-			sleep(2)
-			payload = {'gcode': u'm4-nuts.gcode', 'movie_basename': u'm4-nuts_20151215110007.mpg', 'movie': u'/home/pi/.octoprint/timelapse/m4-nuts_20151215110007.mpg',  "returncode": 255, "error": "Unknown error"}
-			eventManager().fire(Events.MOVIE_FAILED, payload)
-			return None,
-			
-			
+		)			
 			
 def __plugin_load__():
 	global __plugin_implementation__

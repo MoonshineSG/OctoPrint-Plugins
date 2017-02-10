@@ -5,6 +5,8 @@ import octoprint.plugin
 from octoprint.events import eventManager, Events
 import smbus
 import RPi.GPIO as GPIO 
+from subprocess import call
+from thread import start_new_thread
 
 __plugin_name__ = "LED Plugin"
 __plugin_version__ = "0.0.1"
@@ -38,6 +40,9 @@ class LEDPlugin(octoprint.plugin.StartupPlugin, octoprint.plugin.ShutdownPlugin,
 			
 		GPIO.setmode(GPIO.BCM)
 		GPIO.setwarnings(False)
+		
+		GPIO.setup(self.PIN_POWER, GPIO.OUT)    #default OFF (normally open)
+		
 
 	def send_led_command(self, status):
 		try:
@@ -45,8 +50,13 @@ class LEDPlugin(octoprint.plugin.StartupPlugin, octoprint.plugin.ShutdownPlugin,
 		except:
 			pass
 		
+	def get_rid(self):
+		self._logger.info("calling emergency_stop")
+		call(["/home/pi/bin/emergency_stop.py", "rid"])
+		
 	def on_startup(self, host, port):
 		self.send_led_command(self.LED_BLINK)
+		start_new_thread(self.get_rid, ())
 		
 	def on_shutdown(self):
 		self.send_led_command(self.LED_BLINK_FAST)
